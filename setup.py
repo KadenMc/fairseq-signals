@@ -68,14 +68,7 @@ class NumpyExtension(Extension):
         self.__include_dirs = dirs
 
 
-extensions = [
-    NumpyExtension(
-        "fairseq_signals.data.data_utils_fast",
-        sources=["fairseq_signals/data/data_utils_fast.pyx"],
-        language="c++",
-        extra_compile_args=extra_compile_args,
-    ),
-]
+extensions = []
 
 
 cmdclass = {}
@@ -180,24 +173,14 @@ def do_setup(package_data):
         long_description=readme,
         long_description_content_type="text/markdown",
         setup_requires=[
-            "cython",
-            'numpy<1.20.0; python_version<"3.7"',
             'numpy; python_version>="3.7"',
             "setuptools>=18.0",
         ],
         install_requires=[
-            "cffi",
-            "cython",
-            "hydra-core",
             "omegaconf",
             "numpy>=1.21.3",
-            "regex",
-            "sacrebleu>=1.4.12",
             "torch",
             "tqdm",
-            "scikit-learn",
-            "wfdb",
-            "transformers>=4.19.0",
         ],
         dependency_links=dependency_links,
         packages=find_packages(

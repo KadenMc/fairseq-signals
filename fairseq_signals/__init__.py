@@ -18,44 +18,33 @@ __all__ = ["pdb"]
 
 # --- Eager imports: needed for inference ---
 from fairseq_signals.distributed import utils as distributed_utils
-sys.modules["fairseq_signals.distributed_utils"] = distributed_utils
+from fairseq_signals.logging import meters, metrics
 
-# --- Eager imports: core model/module infrastructure ---
+sys.modules["fairseq_signals.distributed_utils"] = distributed_utils
+sys.modules["fairseq_signals.meters"] = meters
+sys.modules["fairseq_signals.metrics"] = metrics
+
+# initialize hydra
+from fairseq_signals.dataclass.initialize import hydra_init
+hydra_init()
+
+# Core model/module infrastructure (needed for inference)
 import fairseq_signals.models # noqa
 import fairseq_signals.modules # noqa
 import fairseq_signals.distributed # noqa
+import fairseq_signals.tasks # noqa
 from fairseq_signals.utils import pdb
 
-# --- Lazy imports: only loaded when accessed ---
-# These pull in heavy/unnecessary deps (sklearn, hydra, etc.)
-# and are only needed for training, evaluation, or Hydra CLI usage.
-
-def _lazy_init():
-    """Initialize Hydra and register training components.
-    Called automatically when training modules are first accessed,
-    or can be called explicitly if needed."""
-    from fairseq_signals.logging import meters, metrics
-    sys.modules["fairseq_signals.meters"] = meters
-    sys.modules["fairseq_signals.metrics"] = metrics
-
-    from fairseq_signals.dataclass.initialize import hydra_init
-    hydra_init()
-
-    import fairseq_signals.criterions # noqa
-    import fairseq_signals.optim # noqa
-    import fairseq_signals.optim.lr_scheduler # noqa
-    import fairseq_signals.tasks # noqa
-
-    _lazy_init._done = True
-
-_lazy_init._done = False
-
+# --- Lazy imports: training-only modules ---
+# These are only loaded when accessed, avoiding unnecessary overhead.
 
 def __getattr__(name):
     """Lazy-load training modules on first access."""
-    lazy_modules = {"criterions", "optim", "tasks", "meters", "metrics"}
-    if name in lazy_modules:
-        if not _lazy_init._done:
-            _lazy_init()
-        return sys.modules.get(f"fairseq_signals.{name}")
+    if name == "criterions":
+        import fairseq_signals.criterions # noqa
+        return fairseq_signals.criterions
+    if name == "optim":
+        import fairseq_signals.optim # noqa
+        import fairseq_signals.optim.lr_scheduler # noqa
+        return fairseq_signals.optim
     raise AttributeError(f"module 'fairseq_signals' has no attribute {name!r}")

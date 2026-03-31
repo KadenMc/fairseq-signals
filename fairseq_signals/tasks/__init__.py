@@ -108,7 +108,10 @@ def import_tasks(tasks_dir, namespace):
             and (file.endswith(".py") or os.path.isdir(path))
         ):
             task_name = file[: file.find(".py")] if file.endswith(".py") else file
-            importlib.import_module(namespace + "." + task_name)
+            try:
+                importlib.import_module(namespace + "." + task_name)
+            except (ImportError, ModuleNotFoundError):
+                continue
 
             # expose `task_parser` for sphinx
             if task_name in TASK_REGISTRY:
